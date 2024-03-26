@@ -83,11 +83,11 @@ func parseFile(fset *token.FileSet, filename string, src interface{}, mode Mode)
 	}
 
 	// get source
-	text, err := readSourceLocal(filename, src)
+	text, err := readSourceLocal(filename, src) // 获得所有文本内容
 	if err != nil {
 		return
 	}
-
+	// 初始化一个解析器
 	var p parser
 	defer func() {
 		if e := recover(); e != nil {
@@ -113,6 +113,7 @@ func parseFile(fset *token.FileSet, filename string, src interface{}, mode Mode)
 	}()
 
 	// parse source
+	// 在这个阶段，会把源代码的注释部分解析为ast，其他内容不变
 	p.init(fset, filename, text, mode)
 	f = p.parseFile()
 

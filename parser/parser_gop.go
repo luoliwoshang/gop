@@ -219,6 +219,7 @@ func ParseFSEntry(fset *token.FileSet, fs FileSystem, filename string, src inter
 	if isClass {
 		mode |= ParseGoPlusClass
 	}
+	// 解析单个文件到ast
 	f, err = ParseFSFile(fset, fs, filename, src, mode)
 	if f != nil {
 		f.IsProj, f.IsClass = isProj, isClass
@@ -306,6 +307,7 @@ func ParseFSEntries(fset *token.FileSet, fs FileSystem, files []string, conf Con
 		if fabs {
 			file, _ = fs.Abs(file)
 		}
+		// 获得绝对路径
 		f, err := ParseFSEntry(fset, fs, file, nil, conf)
 		if err != nil {
 			return nil, err
@@ -330,7 +332,7 @@ func ParseFile(fset *token.FileSet, filename string, src interface{}, mode Mode)
 
 // ParseFSFile parses the source code of a single Go+ source file and returns the corresponding ast.File node.
 func ParseFSFile(fset *token.FileSet, fs FileSystem, filename string, src interface{}, mode Mode) (f *ast.File, err error) {
-	code, err := readSourceFS(fs, filename, src)
+	code, err := readSourceFS(fs, filename, src) // 读取源代码
 	if err != nil {
 		return
 	}

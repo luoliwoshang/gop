@@ -286,6 +286,7 @@ func (p *parser) next0() {
 	// when tracing as it provides a more readable output. The
 	// very first token (!p.pos.IsValid()) is not initialized
 	// (it is token.ILLEGAL), so don't print it .
+	// token.ILLEGAL 不打印
 	if p.trace && p.pos.IsValid() {
 		s := p.tok.String()
 		switch {
@@ -325,6 +326,8 @@ func (p *parser) consumeComment() (comment *ast.Comment, endline int) {
 // comments list, and return it together with the line at which
 // the last comment in the group ends. A non-comment token or n
 // empty lines terminate a comment group.
+// 消费一组相邻的注释，将其添加到解析器的注释列表中，并将其与组中最后一条注释结束的行一起返回。
+// 非注释令牌或n个空行终止注释组。
 func (p *parser) consumeCommentGroup(n int) (comments *ast.CommentGroup, endline int) {
 	var list []*ast.Comment
 	endline = p.file.Line(p.pos)
@@ -341,20 +344,17 @@ func (p *parser) consumeCommentGroup(n int) (comments *ast.CommentGroup, endline
 	return
 }
 
-// Advance to the next non-comment token. In the process, collect
-// any comment groups encountered, and remember the last lead and
-// line comments.
+// 前进到下一个非注释标记。在这个过程中，收集遇到任何评论组,以及记住最后一个前导注释和行注释
 //
-// A lead comment is a comment group that starts and ends in a
-// line without any other tokens and that is followed by a non-comment
-// token on the line immediately after the comment group.
+// 前导注释（Lead Comment）是指一个注释组（comment group），
+// 它在同一行内起始和结束，并且没有其他标记在同一行上。
+// 在该注释组的下一行上，紧接着的标记不是注释类型。
 //
 // A line comment is a comment group that follows a non-comment
 // token on the same line, and that has no tokens after it on the line
 // where it ends.
 //
-// Lead and line comments may be considered documentation that is
-// stored in the AST.
+// 那两个注释可以被视作文档
 func (p *parser) next() {
 	p.leadComment = nil
 	p.lineComment = nil
@@ -362,6 +362,7 @@ func (p *parser) next() {
 	p.next0()
 
 	if p.tok == token.COMMENT {
+		// 注册一个注释组
 		var comment *ast.CommentGroup
 		var endline int
 
@@ -378,6 +379,7 @@ func (p *parser) next() {
 
 		// consume successor comments, if any
 		endline = -1
+		// 如果当前是一个comment，那么消费一个comment
 		for p.tok == token.COMMENT {
 			comment, endline = p.consumeCommentGroup(1)
 		}
