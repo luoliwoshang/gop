@@ -41,7 +41,6 @@ format.result
 *.test
 *.prof
 
-.vscode
 .idea
 
 cmd/qfmt/qfmt
