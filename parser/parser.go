@@ -3845,6 +3845,7 @@ func (p *parser) parseGlobalStmts(sync map[token.Token]bool, pos token.Pos, stmt
 	if p.tok != token.EOF {
 		p.errorExpected(p.pos, "statement", 2)
 	}
+	// 创建一个main函数声明
 	f := &ast.FuncDecl{
 		Name: &ast.Ident{NamePos: pos, Name: "main"},
 		Doc:  doc,
@@ -3894,6 +3895,7 @@ func (p *parser) parseFile() *ast.File {
 			return nil
 		}
 	} else {
+		// 如果为非包声明，则默认为生成一个main标识符
 		noPkgDecl = true
 		pos = token.NoPos
 		ident = &ast.Ident{NamePos: p.file.Pos(0), Name: "main"}
@@ -3911,6 +3913,7 @@ func (p *parser) parseFile() *ast.File {
 		if p.mode&ImportsOnly == 0 {
 			// rest of package body
 			for p.tok != token.EOF {
+				// 为当前的decls数组增加一个新的decl
 				decls = append(decls, p.parseDecl(declStart))
 			}
 		}
