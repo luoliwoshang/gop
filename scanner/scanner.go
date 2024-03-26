@@ -53,7 +53,7 @@ type Scanner struct {
 	offset     int  // character offset
 	rdOffset   int  // reading offset (position after current character)
 	lineOffset int  // current line offset
-	nParen     int
+	nParen     int  // 有多少个圆括号
 	insertSemi bool // insert a semicolon before next newline
 
 	// public state - ok to modify
@@ -66,11 +66,13 @@ const bom = 0xFEFF // byte order mark, only permitted as very first character
 // s.ch < 0 means end-of-file.
 func (s *Scanner) next() {
 	if s.rdOffset < len(s.src) {
+		// 将当前正在读取的位置设置到词的位置
 		s.offset = s.rdOffset
 		if s.ch == '\n' {
 			s.lineOffset = s.offset
 			s.file.AddLine(s.offset)
 		}
+		// 读取src中指定位置的字节，转换为一个unicode
 		r, w := rune(s.src[s.rdOffset]), 1
 		switch {
 		case r == 0:
@@ -179,8 +181,10 @@ func (s *Scanner) scanComment() string {
 	next := -1           // position immediately following the comment; < 0 means invalid comment
 	numCR := 0
 
+	// 这里判断的是第二个 /，因为执行过一次 s.next()
+
 	if s.ch == '/' {
-		//-style comment
+		//-style comment 普通的双斜杠
 		// (the final '\n' is not considered part of the comment)
 		s.next()
 		for s.ch != '\n' && s.ch >= 0 {
@@ -229,7 +233,7 @@ func (s *Scanner) scanComment() string {
 	}
 
 exit:
-	lit := s.src[offs:s.offset]
+	lit := s.src[offs:s.offset] // 获得从第一个斜杠开始到 \n 结束的内容
 
 	// On Windows, a (//-comment) line may end in "\r\n".
 	// Remove the final '\r' before analyzing the text for
@@ -829,6 +833,7 @@ scanAgain:
 	// determine token value
 	insertSemi := false
 	switch ch := s.ch; {
+	// 是否为字母下划线
 	case isLetter(ch):
 		lit = s.scanIdentifier()
 		if len(lit) > 1 {
@@ -847,6 +852,7 @@ scanAgain:
 			insertSemi = true
 			tok = token.IDENT
 		}
+	// 是否是数字
 	case isDecimal(ch) || ch == '.' && isDecimal(rune(s.peek())):
 		insertSemi = true
 		tok, lit = s.scanNumber()
