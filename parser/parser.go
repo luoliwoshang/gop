@@ -81,7 +81,7 @@ type parser struct {
 
 	// Non-syntactic parser control
 	exprLev int  // < 0: in control clause, >= 0: in expression
-	inRHS   bool // if set, the parser is parsing a rhs expression
+	inRHS   bool // 如果设置，则解析器正在解析RHS表达式 if set, the parser is parsing a rhs expression
 
 	// Ordinary identifier scopes
 	pkgScope   *ast.Scope        // pkgScope.Outer == nil
@@ -2634,11 +2634,15 @@ const (
 // of a range clause (with mode == rangeOk). The returned statement is an
 // assignment with a right-hand side that is a single unary expression of
 // the form "range x". No guarantees are given for the left-hand side.
+// 如果parseSimpleStmt解析了RANGE子句的赋值(WITH MODE==rangeOk)，则它将返回TRUE作为第二个结果。
+// 返回的语句是一个右侧的赋值，它是“range x”形式的单个一元表达式。
+// 左手边没有任何保证。
 func (p *parser) parseSimpleStmt(mode int, allowCmd bool) (ast.Stmt, bool) {
 	if p.trace {
 		defer un(trace(p, "SimpleStmt"))
 	}
 
+	// 获得左侧表达式列表
 	x := p.parseLHSList(allowCmd)
 
 	switch p.tok {
@@ -3344,6 +3348,7 @@ func (p *parser) parseStmt(allowCmd bool) (s ast.Stmt) {
 		s = &ast.DeclStmt{Decl: p.parseGenDecl(p.tok, p.parseValueSpec)}
 	case
 		// tokens that may start an expression
+		// 这段代码定义了可能开始一个表达式的tokens集合。
 		token.INT, token.FLOAT, token.IMAG, token.RAT, token.CHAR, token.STRING, token.CSTRING, token.FUNC, token.LPAREN, // operands
 		token.ADD, token.SUB, token.MUL, token.AND, token.XOR, token.ARROW, token.NOT, token.ENV, // unary operators
 		token.LBRACK, token.STRUCT, token.CHAN, token.INTERFACE: // composite types
@@ -3354,6 +3359,7 @@ func (p *parser) parseStmt(allowCmd bool) (s ast.Stmt) {
 		// because of the required look-ahead, labeled statements are
 		// parsed by parseSimpleStmt - don't expect a semicolon after
 		// them
+		// 由于所需的前瞻，带标签的语句将由parseSimpleStmt解析--不要指望它们后面会有分号
 		if _, isLabeledStmt := s.(*ast.LabeledStmt); !isLabeledStmt {
 			p.expectSemi()
 		}

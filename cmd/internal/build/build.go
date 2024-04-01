@@ -90,9 +90,12 @@ func runCmd(cmd *base.Command, args []string) {
 	build(proj, conf, confCmd)
 }
 
+// proj:项目的文件列表
+// conf:gop的位置，初始化一个文件树
 func build(proj gopprojs.Proj, conf *gop.Config, build *gocmd.BuildConfig) {
 	var obj string
 	var err error
+	// 判断是何种构建
 	switch v := proj.(type) {
 	case *gopprojs.DirProj:
 		obj = v.Dir

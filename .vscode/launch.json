@@ -12,7 +12,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/cmd/gop/main.go",
             "cwd": "${workspaceFolder}/cmd/gop/test/",
-            "args": ["build","-o","./","./01-test.gop"]
+            "args": ["build","-o","./","./02-overload.gop"]
         }
     ]
 }
