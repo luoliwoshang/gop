@@ -74,10 +74,12 @@ func runCmd(cmd *base.Command, args []string) {
 		log.Panicln("too many arguments:", args)
 	}
 
-	conf, err := gop.NewDefaultConf(".", true)
+	conf, err := gop.NewDefaultConf(".", gop.ConfFlagNoTestFiles)
 	if err != nil {
 		log.Panicln("gop.NewDefaultConf:", err)
 	}
+	defer conf.UpdateCache()
+
 	confCmd := &gocmd.BuildConfig{Gop: conf.Gop}
 	if *flagOutput != "" {
 		output, err := filepath.Abs(*flagOutput)
@@ -93,16 +95,17 @@ func runCmd(cmd *base.Command, args []string) {
 // proj:项目的文件列表
 // conf:gop的位置，初始化一个文件树
 func build(proj gopprojs.Proj, conf *gop.Config, build *gocmd.BuildConfig) {
+	const flags = gop.GenFlagPrompt
 	var obj string
 	var err error
 	// 判断是何种构建
 	switch v := proj.(type) {
 	case *gopprojs.DirProj:
 		obj = v.Dir
-		err = gop.BuildDir(obj, conf, build)
+		err = gop.BuildDir(obj, conf, build, flags)
 	case *gopprojs.PkgPathProj:
 		obj = v.Path
-		err = gop.BuildPkgPath("", v.Path, conf, build)
+		err = gop.BuildPkgPath("", v.Path, conf, build, flags)
 	case *gopprojs.FilesProj:
 		err = gop.BuildFiles(v.Files, conf, build)
 	default:
