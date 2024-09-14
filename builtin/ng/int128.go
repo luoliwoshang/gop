@@ -7,6 +7,11 @@ import (
 	"math/bits"
 )
 
+const Gopo_Int128_Cast = "Int128FromInt,Int128FromUntypedBigInt,Int128FromInt64,Int128FromUint64,Int128FromInt32,Int128FromInt16,Int128FromInt8,Int128FromUint128,Int128FromBigInt,Int128TryFromBigInt,Int128_Zero"
+
+// const Gopo_Int128_Init = "Int128InitFromInt,Int128InitFromUntypedBigint"
+// upcode cause -> cannot use 1 (type untyped int) as type github.com/goplus/gop/builtin/ng.Int128 in assignment
+
 const (
 	Int128_Max       = 1<<127 - 1
 	Int128_Min       = -1 << 127
@@ -36,23 +41,29 @@ type Int128 struct {
 }
 
 // Int128_Init: func int128.init(v int) int128
+
+// follow name with overload decl cause  anonther error -> cannot use 1 (type untyped int) as type github.com/goplus/gop/builtin/ng.Int128 in assignment
+// func Int128InitFromInt(v int) (out Int128) {
 func Int128_Init__0(v int) (out Int128) {
-	return Int128_Cast__2(int64(v))
+	return Int128FromInt64(int64(v))
 }
 
 // Int128_Init: func int128.init(v untyped_bigint) int128
+
+// follow name with overload decl cause anonther error -> cannot use 1 (type untyped int) as type github.com/goplus/gop/builtin/ng.Int128 in assignment
+// func Int128InitFromUntypedBigint(v UntypedBigint) (out Int128) {
 func Int128_Init__1(v UntypedBigint) (out Int128) {
-	return Int128_Cast__1(v)
+	return Int128FromUntypedBigInt(v)
 }
 
 // Int128_Cast: func int128(v int) int128
-func Int128_Cast__0(v int) Int128 {
-	return Int128_Cast__2(int64(v))
+func Int128FromInt(v int) Int128 {
+	return Int128FromInt64(int64(v))
 }
 
 // Int128_Cast: func int128(v untyped_bigint) int128
-func Int128_Cast__1(v UntypedBigint) (out Int128) {
-	out, inRange := Int128_Cast__9(v)
+func Int128FromUntypedBigInt(v UntypedBigint) (out Int128) {
+	out, inRange := Int128TryFromBigInt(v)
 	if !inRange {
 		log.Panicf("value %v was not in valid int128 range\n", v)
 	}
@@ -60,7 +71,7 @@ func Int128_Cast__1(v UntypedBigint) (out Int128) {
 }
 
 // Int128_Cast: func int128(v int64) int128
-func Int128_Cast__2(v int64) (out Int128) {
+func Int128FromInt64(v int64) (out Int128) {
 	var hi uint64
 	if v < 0 {
 		hi = maxUint64
@@ -69,37 +80,37 @@ func Int128_Cast__2(v int64) (out Int128) {
 }
 
 // Int128_Cast: func int128(v uint64) int128
-func Int128_Cast__3(v uint64) Int128 {
+func Int128FromUint64(v uint64) Int128 {
 	return Int128{lo: v}
 }
 
 // Int128_Cast: func int128(v int32) int128
-func Int128_Cast__4(v int32) Int128 {
-	return Int128_Cast__2(int64(v))
+func Int128FromInt32(v int32) Int128 {
+	return Int128FromInt64(int64(v))
 }
 
 // Int128_Cast: func int128(v int16) int128
-func Int128_Cast__5(v int16) Int128 {
-	return Int128_Cast__2(int64(v))
+func Int128FromInt16(v int16) Int128 {
+	return Int128FromInt64(int64(v))
 }
 
 // Int128_Cast: func int128(v int8) int128
-func Int128_Cast__6(v int8) Int128 {
-	return Int128_Cast__2(int64(v))
+func Int128FromInt8(v int8) Int128 {
+	return Int128FromInt64(int64(v))
 }
 
 // Int128_Cast: func int128(v uint18) int128
-func Int128_Cast__7(v Uint128) (out Int128) {
+func Int128FromUint128(v Uint128) (out Int128) {
 	return Int128{hi: v.hi, lo: v.lo}
 }
 
 // Int128_Cast: func int128(v *big.Int) int128
-func Int128_Cast__8(v *big.Int) Int128 {
-	out, _ := Int128_Cast__9(v)
+func Int128FromBigInt(v *big.Int) Int128 {
+	out, _ := Int128TryFromBigInt(v)
 	return out
 }
 
-func Int128_Cast__9(v *big.Int) (out Int128, inRange bool) {
+func Int128TryFromBigInt(v *big.Int) (out Int128, inRange bool) {
 	neg := v.Sign() < 0
 	words := v.Bits()
 
@@ -158,7 +169,7 @@ func Int128_Cast__9(v *big.Int) (out Int128, inRange bool) {
 }
 
 // Int128_Cast: func int128() int128
-func Int128_Cast__a() Int128 {
+func Int128_Zero() Int128 {
 	return Int128{}
 }
 
@@ -685,7 +696,7 @@ func (i Int128) QuoRem__1(by Int128) (q, r Int128) {
 	}
 
 	qu, ru := i.Gop_Rcast__0().QuoRem__1(by.Gop_Rcast__0())
-	q, r = Int128_Cast__7(qu), Int128_Cast__7(ru)
+	q, r = Int128FromUint128(qu), Int128FromUint128(ru)
 	if qSign < 0 {
 		q = q.Gop_Neg()
 	}
@@ -736,7 +747,7 @@ func (i Int128) Gop_Quo__1(by Int128) (q Int128) {
 	}
 
 	qu := i.Gop_Rcast__0().Gop_Quo__1(by.Gop_Rcast__0())
-	q = Int128_Cast__7(qu)
+	q = Int128FromUint128(qu)
 	if qSign < 0 {
 		q = q.Gop_Neg()
 	}
@@ -805,7 +816,7 @@ func ParseInt128(s string, base int) (out Int128, err error) {
 		err = fmt.Errorf("invalid int128 string: %q", s)
 		return
 	}
-	out, inRange := Int128_Cast__9(b)
+	out, inRange := Int128TryFromBigInt(b)
 	if !inRange {
 		err = fmt.Errorf("string %q was not in valid int128 range", s)
 	}

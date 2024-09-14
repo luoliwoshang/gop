@@ -104,6 +104,7 @@ func genGo(t *testing.T, conf *cl.Config, gopcode string) []byte {
 
 func testRun(t *testing.T, gopcode, expected string) {
 	code := genGo(t, cltest.Conf, gopcode)
+	t.Logf(string(code))
 	result := goRun(t, code)
 	if result != expected {
 		t.Fatalf("=> Result:\n%s\n=> Expected:\n%s\n", result, expected)
@@ -112,6 +113,7 @@ func testRun(t *testing.T, gopcode, expected string) {
 
 func testRunType(t *testing.T, typ, gopcodeT, expected string) {
 	gopcode := strings.ReplaceAll(gopcodeT, "$(type)", typ)
+	t.Logf(gopcode)
 	testRun(t, gopcode, expected)
 }
 
@@ -195,6 +197,7 @@ func TestUint128_run(t *testing.T) {
 	testRunType(t, "uint128", testType_fixint_code, testType_fixint_ret)
 }
 
+// cannot convert 1 << 65 (untyped int constant 36893488147419103232) to type ng.Int128
 func TestInt128_run(t *testing.T) {
 	testRunType(t, "int128", testType_fixint_code+testType_dec_code, testType_fixint_ret+testType_dec_ret)
 }
