@@ -21,11 +21,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"go/token"
-	"go/types"
 	"io"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -34,7 +32,6 @@ import (
 	"github.com/goplus/gogen/packages"
 	"github.com/goplus/gogen/packages/cache"
 	"github.com/goplus/mod/env"
-	"github.com/goplus/mod/modfetch"
 	"github.com/goplus/mod/modfile"
 	"github.com/goplus/mod/xgomod"
 )
@@ -132,78 +129,78 @@ const (
 )
 
 // Import imports a Go/XGo package.
-func (p *Importer) Import(pkgPath string) (pkg *types.Package, err error) {
-	if strings.HasPrefix(pkgPath, xgoMod) {
-		if suffix := pkgPath[len(xgoMod):]; suffix == "" || suffix[0] == '/' {
-			xgoRoot := p.xgo.Root
-			if suffix == "/cl/internal/gop-in-go/foo" { // for test github.com/goplus/xgo/cl
-				if err = p.genGoExtern(xgoRoot+suffix, false); err != nil {
-					return
-				}
-			}
-			return p.impFrom.ImportFrom(pkgPath, xgoRoot, 0)
-		}
-	}
-	if isPkgInMod(pkgPath, xMod) {
-		return p.impFrom.ImportFrom(pkgPath, p.xgo.Root, 0)
-	}
-	if mod := p.mod; mod.HasModfile() {
-		ret, e := mod.Lookup(pkgPath)
-		if e != nil {
-			return nil, e
-		}
-		switch ret.Type {
-		case xgomod.PkgtExtern:
-			isExtern := ret.Real.Version != ""
-			if isExtern {
-				if _, err = modfetch.Get(ret.Real.String()); err != nil {
-					return
-				}
-			}
-			modDir := ret.ModDir
-			goModfile := filepath.Join(modDir, "go.mod")
-			if _, e := os.Lstat(goModfile); e != nil { // no go.mod
-				os.Chmod(modDir, modWritable)
-				defer os.Chmod(modDir, modReadonly)
-				os.WriteFile(goModfile, defaultGoMod(ret.ModPath), 0644)
-			}
-			return p.impFrom.ImportFrom(pkgPath, ret.ModDir, 0)
-		case xgomod.PkgtModule, xgomod.PkgtLocal:
-			if pkgPath == p.mod.Path() {
-				break
-			}
-			if err = p.genGoExtern(ret.Dir, false); err != nil {
-				return
-			}
-		case xgomod.PkgtStandard:
-			return p.impFrom.ImportFrom(pkgPath, p.xgo.Root, 0)
-		}
-	}
-	return p.impFrom.Import(pkgPath)
-}
+// func (p *Importer) Import(pkgPath string) (pkg *types.Package, err error) {
+// 	if strings.HasPrefix(pkgPath, xgoMod) {
+// 		if suffix := pkgPath[len(xgoMod):]; suffix == "" || suffix[0] == '/' {
+// 			xgoRoot := p.xgo.Root
+// 			if suffix == "/cl/internal/gop-in-go/foo" { // for test github.com/goplus/xgo/cl
+// 				if err = p.genGoExtern(xgoRoot+suffix, false); err != nil {
+// 					return
+// 				}
+// 			}
+// 			return p.impFrom.ImportFrom(pkgPath, xgoRoot, 0)
+// 		}
+// 	}
+// 	if isPkgInMod(pkgPath, xMod) {
+// 		return p.impFrom.ImportFrom(pkgPath, p.xgo.Root, 0)
+// 	}
+// 	if mod := p.mod; mod.HasModfile() {
+// 		ret, e := mod.Lookup(pkgPath)
+// 		if e != nil {
+// 			return nil, e
+// 		}
+// 		switch ret.Type {
+// 		case xgomod.PkgtExtern:
+// 			isExtern := ret.Real.Version != ""
+// 			if isExtern {
+// 				if _, err = modfetch.Get(ret.Real.String()); err != nil {
+// 					return
+// 				}
+// 			}
+// 			modDir := ret.ModDir
+// 			goModfile := filepath.Join(modDir, "go.mod")
+// 			if _, e := os.Lstat(goModfile); e != nil { // no go.mod
+// 				os.Chmod(modDir, modWritable)
+// 				defer os.Chmod(modDir, modReadonly)
+// 				os.WriteFile(goModfile, defaultGoMod(ret.ModPath), 0644)
+// 			}
+// 			return p.impFrom.ImportFrom(pkgPath, ret.ModDir, 0)
+// 		case xgomod.PkgtModule, xgomod.PkgtLocal:
+// 			if pkgPath == p.mod.Path() {
+// 				break
+// 			}
+// 			if err = p.genGoExtern(ret.Dir, false); err != nil {
+// 				return
+// 			}
+// 		case xgomod.PkgtStandard:
+// 			return p.impFrom.ImportFrom(pkgPath, p.xgo.Root, 0)
+// 		}
+// 	}
+// 	return p.impFrom.Import(pkgPath)
+// }
 
-func (p *Importer) genGoExtern(dir string, isExtern bool) (err error) {
-	genfile := filepath.Join(dir, autoGenFile)
-	if _, err = os.Lstat(genfile); err != nil { // no xgo_autogen.go
-		if isExtern {
-			os.Chmod(dir, modWritable)
-			defer os.Chmod(dir, modReadonly)
-		}
-		gen := false
-		err = genGoIn(dir, &Config{XGo: p.xgo, Importer: p, Fset: p.fset}, false, p.Flags, &gen)
-		if err != nil {
-			return
-		}
-		if gen {
-			cmd := exec.Command("go", "mod", "tidy")
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			cmd.Dir = dir
-			err = cmd.Run()
-		}
-	}
-	return
-}
+// func (p *Importer) genGoExtern(dir string, isExtern bool) (err error) {
+// 	genfile := filepath.Join(dir, autoGenFile)
+// 	if _, err = os.Lstat(genfile); err != nil { // no xgo_autogen.go
+// 		if isExtern {
+// 			os.Chmod(dir, modWritable)
+// 			defer os.Chmod(dir, modReadonly)
+// 		}
+// 		gen := false
+// 		err = genGoIn(dir, &Config{XGo: p.xgo, Importer: p, Fset: p.fset}, false, p.Flags, &gen)
+// 		if err != nil {
+// 			return
+// 		}
+// 		if gen {
+// 			cmd := exec.Command("go", "mod", "tidy")
+// 			cmd.Stdout = os.Stdout
+// 			cmd.Stderr = os.Stderr
+// 			cmd.Dir = dir
+// 			err = cmd.Run()
+// 		}
+// 	}
+// 	return
+// }
 
 func isPkgInMod(pkgPath, modPath string) bool {
 	if strings.HasPrefix(pkgPath, modPath) {
