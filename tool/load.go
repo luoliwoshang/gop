@@ -19,19 +19,13 @@ package tool
 import (
 	"fmt"
 	"io/fs"
-	"os"
-	"path"
 	"strings"
 
 	"github.com/goplus/gogen"
 	"github.com/goplus/mod/env"
 	"github.com/goplus/mod/xgomod"
 	"github.com/goplus/xgo/ast"
-	"github.com/goplus/xgo/cl"
-	"github.com/goplus/xgo/parser"
 	"github.com/goplus/xgo/token"
-	"github.com/goplus/xgo/x/gocmd"
-	"github.com/goplus/xgo/x/xgoenv"
 	"github.com/qiniu/x/errors"
 )
 
@@ -144,43 +138,43 @@ const (
 	ConfFlagNoCacheFile
 )
 
-// NewDefaultConf creates a dfault configuration for common cases.
-func NewDefaultConf(dir string, flags ConfFlags, tags ...string) (conf *Config, err error) {
-	mod, err := LoadMod(dir)
-	if err != nil {
-		return
-	}
-	xgo := xgoenv.Get()
-	fset := token.NewFileSet()
-	imp := NewImporter(mod, xgo, fset)
-	if len(tags) > 0 {
-		imp.SetTags(strings.Join(tags, ","))
-	}
-	conf = &Config{
-		XGo: xgo, Fset: fset, Mod: mod, Importer: imp,
-		IgnoreNotatedError: flags&ConfFlagIgnoreNotatedError != 0,
-		DontUpdateGoMod:    flags&ConfFlagDontUpdateGoMod != 0,
-	}
-	if flags&ConfFlagNoCacheFile == 0 {
-		conf.CacheFile = imp.CacheFile()
-		imp.Cache().Load(conf.CacheFile)
-	}
-	if flags&ConfFlagNoTestFiles != 0 {
-		conf.Filter = FilterNoTestFiles
-	}
-	return
-}
+// // NewDefaultConf creates a dfault configuration for common cases.
+// func NewDefaultConf(dir string, flags ConfFlags, tags ...string) (conf *Config, err error) {
+// 	mod, err := LoadMod(dir)
+// 	if err != nil {
+// 		return
+// 	}
+// 	xgo := xgoenv.Get()
+// 	fset := token.NewFileSet()
+// 	imp := NewImporter(mod, xgo, fset)
+// 	if len(tags) > 0 {
+// 		imp.SetTags(strings.Join(tags, ","))
+// 	}
+// 	conf = &Config{
+// 		XGo: xgo, Fset: fset, Mod: mod, Importer: imp,
+// 		IgnoreNotatedError: flags&ConfFlagIgnoreNotatedError != 0,
+// 		DontUpdateGoMod:    flags&ConfFlagDontUpdateGoMod != 0,
+// 	}
+// 	if flags&ConfFlagNoCacheFile == 0 {
+// 		conf.CacheFile = imp.CacheFile()
+// 		imp.Cache().Load(conf.CacheFile)
+// 	}
+// 	if flags&ConfFlagNoTestFiles != 0 {
+// 		conf.Filter = FilterNoTestFiles
+// 	}
+// 	return
+// }
 
-func (conf *Config) NewGoCmdConf() *gocmd.Config {
-	if cl := conf.Mod.Opt.Compiler; cl != nil {
-		if os.Getenv("GOP_GOCMD") == "" {
-			os.Setenv("GOP_GOCMD", cl.Name)
-		}
-	}
-	return &gocmd.Config{
-		XGo: conf.XGo,
-	}
-}
+// func (conf *Config) NewGoCmdConf() *gocmd.Config {
+// 	if cl := conf.Mod.Opt.Compiler; cl != nil {
+// 		if os.Getenv("GOP_GOCMD") == "" {
+// 			os.Setenv("GOP_GOCMD", cl.Name)
+// 		}
+// 	}
+// 	return &gocmd.Config{
+// 		XGo: conf.XGo,
+// 	}
+// }
 
 // UpdateCache updates the cache.
 func (conf *Config) UpdateCache(verbose ...bool) {
@@ -193,234 +187,234 @@ func (conf *Config) UpdateCache(verbose ...bool) {
 	}
 }
 
-// LoadMod loads a XGo module from a specified directory.
-func LoadMod(dir string) (mod *xgomod.Module, err error) {
-	mod, err = xgomod.Load(dir)
-	if err != nil && !xgomod.IsNotFound(err) {
-		err = errors.NewWith(err, `xgomod.Load(dir, 0)`, -2, "xgomod.Load", dir, 0)
-		return
-	}
-	if mod == nil {
-		mod = xgomod.Default
-	}
-	err = mod.ImportClasses()
-	if err != nil {
-		err = errors.NewWith(err, `mod.ImportClasses()`, -2, "(*xgomod.Module).ImportClasses", mod)
-	}
-	return
-}
+// // LoadMod loads a XGo module from a specified directory.
+// func LoadMod(dir string) (mod *xgomod.Module, err error) {
+// 	mod, err = xgomod.Load(dir)
+// 	if err != nil && !xgomod.IsNotFound(err) {
+// 		err = errors.NewWith(err, `xgomod.Load(dir, 0)`, -2, "xgomod.Load", dir, 0)
+// 		return
+// 	}
+// 	if mod == nil {
+// 		mod = xgomod.Default
+// 	}
+// 	err = mod.ImportClasses()
+// 	if err != nil {
+// 		err = errors.NewWith(err, `mod.ImportClasses()`, -2, "(*xgomod.Module).ImportClasses", mod)
+// 	}
+// 	return
+// }
 
 // FilterNoTestFiles filters to skip all testing files.
-func FilterNoTestFiles(fi fs.FileInfo) bool {
-	fname := fi.Name()
-	suffix := ""
-	switch path.Ext(fname) {
-	case ".gox":
-		suffix = "test.gox"
-	case ".xgo":
-		suffix = "_test.xgo"
-	case ".gop":
-		suffix = "_test.gop"
-	case ".go":
-		suffix = "_test.go"
-	default:
-		return true
-	}
-	return !strings.HasSuffix(fname, suffix)
-}
+// func FilterNoTestFiles(fi fs.FileInfo) bool {
+// 	fname := fi.Name()
+// 	suffix := ""
+// 	switch path.Ext(fname) {
+// 	case ".gox":
+// 		suffix = "test.gox"
+// 	case ".xgo":
+// 		suffix = "_test.xgo"
+// 	case ".gop":
+// 		suffix = "_test.gop"
+// 	case ".go":
+// 		suffix = "_test.go"
+// 	default:
+// 		return true
+// 	}
+// 	return !strings.HasSuffix(fname, suffix)
+// }
 
 // -----------------------------------------------------------------------------
 
 // LoadDir loads XGo packages from a specified directory.
-func LoadDir(dir string, conf *Config, genTestPkg bool, promptGenGo ...bool) (out, test *gogen.Package, err error) {
-	if conf == nil {
-		conf = new(Config)
-	}
+// func LoadDir(dir string, conf *Config, genTestPkg bool, promptGenGo ...bool) (out, test *gogen.Package, err error) {
+// 	if conf == nil {
+// 		conf = new(Config)
+// 	}
 
-	mod := conf.Mod
-	if mod == nil {
-		if mod, err = LoadMod(dir); err != nil {
-			err = errors.NewWith(err, `LoadMod(dir)`, -2, "tool.LoadMod", dir)
-			return
-		}
-	}
+// 	mod := conf.Mod
+// 	// if mod == nil {
+// 	// 	if mod, err = LoadMod(dir); err != nil {
+// 	// 		err = errors.NewWith(err, `LoadMod(dir)`, -2, "tool.LoadMod", dir)
+// 	// 		return
+// 	// 	}
+// 	// }
 
-	fset := conf.Fset
-	if fset == nil {
-		fset = token.NewFileSet()
-	}
-	pkgs, err := parser.ParseDirEx(fset, dir, parser.Config{
-		ClassKind: mod.ClassKind,
-		Filter:    conf.Filter,
-		Mode:      parser.ParseComments | parser.SaveAbsFile,
-	})
-	if err != nil {
-		return
-	}
-	if len(pkgs) == 0 {
-		return nil, nil, ErrNotFound
-	}
+// 	fset := conf.Fset
+// 	if fset == nil {
+// 		fset = token.NewFileSet()
+// 	}
+// 	pkgs, err := parser.ParseDirEx(fset, dir, parser.Config{
+// 		ClassKind: mod.ClassKind,
+// 		Filter:    conf.Filter,
+// 		Mode:      parser.ParseComments | parser.SaveAbsFile,
+// 	})
+// 	if err != nil {
+// 		return
+// 	}
+// 	if len(pkgs) == 0 {
+// 		return nil, nil, ErrNotFound
+// 	}
 
-	xgo := conf.XGo
-	if xgo == nil {
-		xgo = xgoenv.Get()
-	}
-	imp := conf.Importer
-	if imp == nil {
-		imp = NewImporter(mod, xgo, fset)
-	}
+// 	xgo := conf.XGo
+// 	if xgo == nil {
+// 		xgo = xgoenv.Get()
+// 	}
+// 	imp := conf.Importer
+// 	if imp == nil {
+// 		imp = NewImporter(mod, xgo, fset)
+// 	}
 
-	var pkgTest *ast.Package
-	var clConf = &cl.Config{
-		Fset:         fset,
-		RelativeBase: relativeBaseOf(mod),
-		Importer:     imp,
-		LookupClass:  mod.LookupClass,
-	}
+// 	var pkgTest *ast.Package
+// 	var clConf = &cl.Config{
+// 		Fset: fset,
+// 		// RelativeBase: relativeBaseOf(mod),
+// 		// Importer:    imp,
+// 		LookupClass: mod.LookupClass,
+// 	}
 
-	for name, pkg := range pkgs {
-		if strings.HasSuffix(name, "_test") {
-			if pkgTest != nil {
-				return nil, nil, ErrMultiTestPackges
-			}
-			pkgTest = pkg
-			continue
-		}
-		if out != nil {
-			return nil, nil, ErrMultiPackges
-		}
-		if len(pkg.Files) == 0 { // no XGo source files
-			continue
-		}
-		if promptGenGo != nil && promptGenGo[0] {
-			fmt.Fprintln(os.Stderr, "GenGo", dir, "...")
-		}
-		out, err = cl.NewPackage("", pkg, clConf)
-		if err != nil {
-			if conf.IgnoreNotatedError {
-				err = ignNotatedErrs(err, pkg, fset)
-			}
-			return
-		}
-	}
-	if out == nil {
-		return nil, nil, ErrNotFound
-	}
-	if genTestPkg && pkgTest != nil {
-		test, err = cl.NewPackage("", pkgTest, clConf)
-	}
-	afterLoad(mod, xgo, out, test, conf)
-	return
-}
+// 	for name, pkg := range pkgs {
+// 		if strings.HasSuffix(name, "_test") {
+// 			if pkgTest != nil {
+// 				// return nil, nil, ErrMultiTestPackges
+// 			}
+// 			pkgTest = pkg
+// 			continue
+// 		}
+// 		if out != nil {
+// 			// return nil, nil, ErrMultiPackges
+// 		}
+// 		if len(pkg.Files) == 0 { // no XGo source files
+// 			continue
+// 		}
+// 		if promptGenGo != nil && promptGenGo[0] {
+// 			fmt.Fprintln(os.Stderr, "GenGo", dir, "...")
+// 		}
+// 		out, err = cl.NewPackage("", pkg, clConf)
+// 		if err != nil {
+// 			if conf.IgnoreNotatedError {
+// 				err = ignNotatedErrs(err, pkg, fset)
+// 			}
+// 			return
+// 		}
+// 	}
+// 	if out == nil {
+// 		return nil, nil, ErrNotFound
+// 	}
+// 	if genTestPkg && pkgTest != nil {
+// 		test, err = cl.NewPackage("", pkgTest, clConf)
+// 	}
+// 	// afterLoad(mod, xgo, out, test, conf)
+// 	return
+// }
 
-func afterLoad(mod *xgomod.Module, xgo *env.XGo, out, test *gogen.Package, conf *Config) {
-	if mod.Path() == xgoMod { // nothing to do for XGo itself
-		return
-	}
-	updateMod := !conf.DontUpdateGoMod && mod.HasModfile()
-	if updateMod || conf.XGoDeps != nil {
-		flags := checkGopDeps(out)
-		if conf.XGoDeps != nil { // for `xgo run`
-			*conf.XGoDeps = flags
-		}
-		if updateMod {
-			if test != nil {
-				flags |= checkGopDeps(test)
-			}
-			if flags != 0 {
-				mod.SaveWithXGoMod(xgo, flags)
-			}
-		}
-	}
-}
+// func afterLoad(mod *xgomod.Module, xgo *env.XGo, out, test *gogen.Package, conf *Config) {
+// 	if mod.Path() == xgoMod { // nothing to do for XGo itself
+// 		return
+// 	}
+// 	updateMod := !conf.DontUpdateGoMod && mod.HasModfile()
+// 	if updateMod || conf.XGoDeps != nil {
+// 		flags := checkGopDeps(out)
+// 		if conf.XGoDeps != nil { // for `xgo run`
+// 			*conf.XGoDeps = flags
+// 		}
+// 		if updateMod {
+// 			if test != nil {
+// 				flags |= checkGopDeps(test)
+// 			}
+// 			if flags != 0 {
+// 				mod.SaveWithXGoMod(xgo, flags)
+// 			}
+// 		}
+// 	}
+// }
 
-func checkGopDeps(pkg *gogen.Package) (flags int) {
-	pkg.ForEachFile(func(fname string, file *gogen.File) {
-		flags |= file.CheckGopDeps(pkg)
-	})
-	return
-}
+// func checkGopDeps(pkg *gogen.Package) (flags int) {
+// 	pkg.ForEachFile(func(fname string, file *gogen.File) {
+// 		flags |= file.CheckGopDeps(pkg)
+// 	})
+// 	return
+// }
 
-func relativeBaseOf(mod *xgomod.Module) string {
-	if mod.HasModfile() {
-		return mod.Root()
-	}
-	dir, _ := os.Getwd()
-	return dir
-}
+// func relativeBaseOf(mod *xgomod.Module) string {
+// 	if mod.HasModfile() {
+// 		return mod.Root()
+// 	}
+// 	dir, _ := os.Getwd()
+// 	return dir
+// }
 
 // -----------------------------------------------------------------------------
 
 // LoadFiles loads a XGo package from specified files.
-func LoadFiles(dir string, files []string, conf *Config) (out *gogen.Package, err error) {
-	if conf == nil {
-		conf = new(Config)
-	}
+// func LoadFiles(dir string, files []string, conf *Config) (out *gogen.Package, err error) {
+// 	if conf == nil {
+// 		conf = new(Config)
+// 	}
 
-	mod := conf.Mod
-	if mod == nil {
-		if mod, err = LoadMod(dir); err != nil {
-			err = errors.NewWith(err, `LoadMod(dir)`, -2, "tool.LoadMod", dir)
-			return
-		}
-	}
+// 	mod := conf.Mod
+// 	// if mod == nil {
+// 	// 	if mod, err = LoadMod(dir); err != nil {
+// 	// 		err = errors.NewWith(err, `LoadMod(dir)`, -2, "tool.LoadMod", dir)
+// 	// 		return
+// 	// 	}
+// 	// }
 
-	fset := conf.Fset
-	if fset == nil {
-		fset = token.NewFileSet()
-	}
-	pkgs, err := parser.ParseEntries(fset, files, parser.Config{
-		ClassKind: mod.ClassKind,
-		Filter:    conf.Filter,
-		Mode:      parser.ParseComments | parser.SaveAbsFile,
-	})
-	if err != nil {
-		err = errors.NewWith(err, `parser.ParseFiles(fset, files, parser.ParseComments)`, -2, "parser.ParseFiles", fset, files, parser.ParseComments)
-		return
-	}
-	if len(pkgs) != 1 {
-		err = errors.NewWith(ErrMultiPackges, `len(pkgs) != 1`, -1, "!=", len(pkgs), 1)
-		return
-	}
-	xgo := conf.XGo
-	if xgo == nil {
-		xgo = xgoenv.Get()
-	}
-	for _, pkg := range pkgs {
-		imp := conf.Importer
-		if imp == nil {
-			imp = NewImporter(mod, xgo, fset)
-		}
-		clConf := &cl.Config{
-			Fset:         fset,
-			RelativeBase: relativeBaseOf(mod),
-			Importer:     imp,
-			LookupClass:  mod.LookupClass,
-		}
-		out, err = cl.NewPackage("", pkg, clConf)
-		if err != nil {
-			if conf.IgnoreNotatedError {
-				err = ignNotatedErrs(err, pkg, fset)
-			}
-		}
-		break
-	}
-	afterLoad(mod, xgo, out, nil, conf)
-	return
-}
-
-// -----------------------------------------------------------------------------
-
-var (
-	ErrMultiPackges     = errors.New("multiple packages")
-	ErrMultiTestPackges = errors.New("multiple test packages")
-)
+// 	fset := conf.Fset
+// 	if fset == nil {
+// 		fset = token.NewFileSet()
+// 	}
+// 	pkgs, err := parser.ParseEntries(fset, files, parser.Config{
+// 		ClassKind: mod.ClassKind,
+// 		Filter:    conf.Filter,
+// 		Mode:      parser.ParseComments | parser.SaveAbsFile,
+// 	})
+// 	if err != nil {
+// 		err = errors.NewWith(err, `parser.ParseFiles(fset, files, parser.ParseComments)`, -2, "parser.ParseFiles", fset, files, parser.ParseComments)
+// 		return
+// 	}
+// 	if len(pkgs) != 1 {
+// 		// err = errors.NewWith(ErrMultiPackges, `len(pkgs) != 1`, -1, "!=", len(pkgs), 1)
+// 		return
+// 	}
+// 	xgo := conf.XGo
+// 	if xgo == nil {
+// 		xgo = xgoenv.Get()
+// 	}
+// 	for _, pkg := range pkgs {
+// 		imp := conf.Importer
+// 		if imp == nil {
+// 			imp = NewImporter(mod, xgo, fset)
+// 		}
+// 		clConf := &cl.Config{
+// 			Fset: fset,
+// 			// RelativeBase: relativeBaseOf(mod),
+// 			// Importer:    imp,
+// 			LookupClass: mod.LookupClass,
+// 		}
+// 		out, err = cl.NewPackage("", pkg, clConf)
+// 		if err != nil {
+// 			if conf.IgnoreNotatedError {
+// 				err = ignNotatedErrs(err, pkg, fset)
+// 			}
+// 		}
+// 		break
+// 	}
+// 	// afterLoad(mod, xgo, out, nil, conf)
+// 	return
+// }
 
 // -----------------------------------------------------------------------------
 
-// GetFileClassType get xgo module file classType.
-func GetFileClassType(mod *xgomod.Module, file *ast.File, filename string) (classType string, isTest bool) {
-	return cl.GetFileClassType(file, filename, mod.LookupClass)
-}
+// var (
+// 	ErrMultiPackges     = errors.New("multiple packages")
+// 	ErrMultiTestPackges = errors.New("multiple test packages")
+// )
+
+// -----------------------------------------------------------------------------
+
+// // GetFileClassType get xgo module file classType.
+// func GetFileClassType(mod *xgomod.Module, file *ast.File, filename string) (classType string, isTest bool) {
+// 	return cl.GetFileClassType(file, filename, mod.LookupClass)
+// }
 
 // -----------------------------------------------------------------------------
